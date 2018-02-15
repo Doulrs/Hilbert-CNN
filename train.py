@@ -1,4 +1,3 @@
-# only for project 2
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -8,7 +7,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tqdm import tqdm
-from temp import CNN
+from network import HCNN
 from sklearn.metrics import average_precision_score,recall_score,precision_score,roc_auc_score
 
 
@@ -21,7 +20,7 @@ def train(network_architecture,
           batch_size = 150,
           max_steps = 100,):
 
-    cnn = CNN(network_structure=network_architecture,
+    cnn = HCNN(network_structure=network_architecture,
               learning_rate=learning_rate,
               batch_size=batch_size,
               optimizer=optimizer,

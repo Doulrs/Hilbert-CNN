@@ -36,11 +36,11 @@ def batch_norm(x, phase_train):
     return normed
 
 
-def dropout_byn(x, rate, alpha= -1.7580993408473766, fixedPointMean=0.0, fixedPointVar=1.0,
+def dropout_super(x, rate, alpha= -1.7580993408473766, fixedPointMean=0.0, fixedPointVar=1.0,
                  noise_shape=None, seed=None, name=None, training=False):
     """Dropout to a value with rescaling."""
 
-    def dropout_impl(x, rate, alpha, noise_shape, seed, name):
+    def dropout_(x, rate, alpha, noise_shape, seed, name):
         keep_prob = 1.0 - rate
         x = ops.convert_to_tensor(x, name="x")
         if isinstance(keep_prob, numbers.Real) and not 0 < keep_prob <= 1:
@@ -70,10 +70,10 @@ def dropout_byn(x, rate, alpha= -1.7580993408473766, fixedPointMean=0.0, fixedPo
 
     with ops.name_scope(name, "dropout", [x]) as name:
         return utils.smart_cond(training,
-            lambda: dropout_impl(x, rate, alpha, noise_shape, seed, name),
+            lambda: dropout_(x, rate, alpha, noise_shape, seed, name),
             lambda: array_ops.identity(x))
 
-class CNN(object):
+class HCNN(object):
     def __init__(self, network_structure,
                  activation=tf.nn.elu,
                  learning_rate=1e-3,
@@ -93,7 +93,7 @@ class CNN(object):
         with tf.name_scope('inputs'):
             self.X = tf.placeholder(tf.float32, network_structure['input'],name="x")
             tf.add_to_collection("image", self.X)
-            
+            # self.X = tf.reshape(self.X, shape=[-1, 16, 32, 1])
         with tf.name_scope('labels'):
             self.Y = tf.placeholder(tf.float32, network_structure['output'],name="y")
             tf.add_to_collection("output", self.Y)
@@ -101,7 +101,7 @@ class CNN(object):
         self.phase_train = tf.placeholder(tf.bool, name='phase_train')
         tf.add_to_collection("phase_train", self.phase_train)
 
-        self.p_keep_hidden =0.5
+        self.p_keep_hidden =0.5# 0.1
         self.p_keep_conv = 0.1
 
         # create network
@@ -119,43 +119,42 @@ class CNN(object):
 
     def create_network(self):
         input_shape = int(self.X.shape[-1])
-       
         filters = [64,32,32,32,16,16,16]
         conv1 = self.__conv(self.X, [7, 7, input_shape, filters[0]], __name__="conv1")
         print "conv1: ",conv1.shape
-	
+
         conv1 = self.__conv(conv1, [5, 5, filters[0], filters[0]], __name__="conv2")
-	print "conv2: ",conv1.shape 
-	conv1 = batch_norm(conv1, self.phase_train)
+        print "conv2: ",conv1.shape
+        conv1 = batch_norm(conv1, self.phase_train)
 
         print "conv1 shape is ",conv1.shape
         act1 = self.activation(conv1)
 
         act1 = self.__avgpool(act1, s=2, __name__="avgpool1")
-	print "pool1: ",act1.shape
+        print "pool1: ",act1.shape
         
-	act2 = self.computational_Block(act1, [8, 4, 4, 3], dim_in=filters[0], dim_out=filters[1], __name__="C_BLOCK1")
+        act2 = self.computational_Block(act1, [8, 4, 4, 3], dim_in=filters[0], dim_out=filters[1], __name__="C_BLOCK1")
         print "act2: ",act2.shape
-	act3 = self.computational_Block(act2, [3, 3, 3, 3], dim_in=filters[1], dim_out=filters[1], __name__="C_BLOCK2")
+        act3 = self.computational_Block(act2, [3, 3, 3, 3], dim_in=filters[1], dim_out=filters[1], __name__="C_BLOCK2")
         print "act3: ",act3.shape
-        act6 = act3
+        act6 = act2
         act6 = self.__avgpool(act6, s=2, __name__="avgpool2")
         print "pool2: ", act6.shape
 
         act7 = self.computational_Block(act6, [2, 4, 4, 3], dim_in=filters[1], dim_out=filters[2], __name__="C_BLOCK3")
-	print "act4: ",act7.shape
-	act7 = self.computational_Block(act7, [2, 2, 2, 2], dim_in=filters[2], dim_out=filters[2], __name__="C_BLOCK4")
+        print "act4: ",act7.shape
+        act7 = self.computational_Block(act7, [2, 2, 2, 2], dim_in=filters[2], dim_out=filters[2], __name__="C_BLOCK4")
         print "act5: ",act7.shape
-	act11 = self.computational_Block(act7, [3, 2, 2, 3], dim_in=filters[2], dim_out=filters[3], __name__="C_BLOCK5")
+        act11 = self.computational_Block(act7, [3, 2, 2, 3], dim_in=filters[2], dim_out=filters[3], __name__="C_BLOCK5")
         print "act6 shape ", act11.shape
         act11 = self.__avgpool(act11, s=2, __name__="avgpool3")
         print "act11 after pool ", act11.shape
 
-	feature = act11
+        feature = act11
         with tf.variable_scope('unit_last'):
-	    feature = batch_norm(feature,self.phase_train)
+            feature = batch_norm(feature,self.phase_train)
             feature = self.activation(feature)
-            feature = self.__avgpool(feature,s=2,__name__="avgpool4")
+            feature = self.__avgpool(feature,s=2,__name__="avgpool4")# avgpool size could be 4
 
 
 
@@ -168,12 +167,12 @@ class CNN(object):
         # #
         feature = self._fully_connected(feature, 100, __name__="fc1")
         feature = self.activation(feature)
-	feature = self.__dropout(feature, self.p_keep_hidden, __name__="dropout4")
+        feature = self.__dropout(feature, self.p_keep_hidden, __name__="dropout4")
         
-	feature = self._fully_connected(feature, 50, __name__="fc2")
-	feature = self.activation(feature)
-	print feature.shape
-	feature = self.__dropout(feature, self.p_keep_hidden, __name__="dropout5")
+        feature = self._fully_connected(feature, 50, __name__="fc2")
+        feature = self.activation(feature)
+        print feature.shape
+        feature = self.__dropout(feature, self.p_keep_hidden, __name__="dropout5")
         self.pyx = self._fully_connected(feature,int(self.Y.shape[-1]), __name__="fc3")
         tf.add_to_collection("logits", self.pyx)
         return self.pyx
@@ -190,7 +189,7 @@ class CNN(object):
                                        [k1, k1, dim_in, n1],
                                        [k2, k2, n1, dim_out],
                                        __name__=__name__+"/ResBa"+__name__[-1])
-            # print ResBlock1a.shape
+
             ResBlock1b = self.ResBlock(inputs,
                                        [k3, k3, dim_in, n2],
                                        [k4, k4, n2, dim_out],
@@ -247,8 +246,10 @@ class CNN(object):
                               strides=[1, s, s, 1], padding='SAME', name=__name__)
 
     def __dropout(self,inputs,prob,__name__="dropout"):
-        return dropout_byn(x=inputs, rate=prob, name=__name__)
-            
+        return dropout_super(x=inputs, rate=prob, name=__name__)
+
+
+
     def _fully_connected(self, x, out_dim,__name__ = "fc"):
         """FullyConnected layer for final output."""
         w = tf.get_variable(
@@ -282,9 +283,10 @@ class CNN(object):
 
         with tf.name_scope('Train'):
             global_step = tf.Variable(tf.constant(0), trainable=False)
+            trainable_variables = tf.trainable_variables()
+            self.grads = tf.gradients(self.cost, trainable_variables)
             self.train_op = self.optimizer(self.learning_rate).minimize(self.cost, global_step=global_step)
-
-        self.merged = tf.summary.merge_all()
+            self.merged = tf.summary.merge_all()
 
     def training_fitting(self, x, y):
         summary, opt, cost, acc,grads = self.sess.run((self.merged,self.train_op, self.cost, self.acc_op,self.grads),

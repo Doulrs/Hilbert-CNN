@@ -96,12 +96,6 @@ X_train, X_test, y_train, y_test = train_test_split(IMG, LABELS, test_size=0.1,r
 print("     X_train size is ",X_train.shape)
 print("     X_test size is ",X_test.shape)
 
-def selu(x):
-    with ops.name_scope('elu') as scope:
-        alpha = 1.6732632423543772848170429916717
-        scale = 1.0507009873554804934193349852946
-        return scale*tf.where(x>=0.0, x, alpha*tf.nn.elu(x))
-
 
 optimizer = tf.train.AdamOptimizer
 activation = tf.nn.elu
