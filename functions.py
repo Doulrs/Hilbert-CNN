@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-
+# read file
 def read_file(lines):
     ID = []
     Seq = []
@@ -14,6 +14,8 @@ def read_file(lines):
             Raw_lab.append(lines[i])
     return ID,Seq,Raw_lab
 
+# str to number
+# mapping dictionary
 def seq2num(seq, dic1):
     seq1 = []
     for s in seq:
@@ -23,7 +25,6 @@ def seq2num(seq, dic1):
 
 
 def hilbert_curve(n):
-    ''' Generate Hilbert curve indexing for (n, n) array. 'n' must be a power of two. '''
     # recursion base
     if n == 1:
         return np.zeros((1, 1), np.int32)
@@ -55,7 +56,7 @@ def plot_row(seq,sub_length,map_dic):
         H_dna[i, :] = num_A[i, :]
     return H_dna
 
-
+# 1-d sequence
 def plot_row1(seq,sub_length,map_dic):
     num_A = one_hot(seq, sub_length, map_dic)
     H_dna = -1.*np.ones((500, 1,4 ** sub_length))
@@ -63,7 +64,7 @@ def plot_row1(seq,sub_length,map_dic):
         H_dna[i, 0, :] = num_A[i, :]
     return H_dna
 
-
+# one hot encoding
 def one_hot(sequence, sub_len, mapping_dic):
     n_ = len(sequence)
     sub_list = []
@@ -74,7 +75,7 @@ def one_hot(sequence, sub_len, mapping_dic):
         res_.append(mapping_dic[sub])
 
     return np.array(res_)
-
+# cut the sequence
 def cut(seq,sub_length):
     n = len(seq)
     new = []
@@ -82,7 +83,7 @@ def cut(seq,sub_length):
         new.append(seq[i:i+sub_length])
     return np.array(new)
 
-
+# generate elements of the sequence
 def element(seq_list):
     list_ = []
     for s in seq_list:
@@ -90,7 +91,7 @@ def element(seq_list):
             list_.append(s)
     return list_
 
-
+# generate mapping dictionary
 def combination(elements, seq_length):
     keys = map(''.join, itertools.product(elements, repeat=seq_length))
     n_word = len(keys)
@@ -100,8 +101,9 @@ def combination(elements, seq_length):
         mapping_dic[keys[i]] = array_word[i,:]
     return mapping_dic
 
-
-def diag_snack(m,n):
+## Generate various curve
+# diagnal snake curve
+def diag_snake(m,n):
     H = np.zeros((m,n))
     count = 0
     for i in range(0,m+n-1):
@@ -118,10 +120,10 @@ def diag_snack(m,n):
                         H[x, y] = count
                         count += 1
     return H
-
+# reshape curve
 def reshape_curve(m,n):
     return np.array((m*n)).reshape((m,n))
-
+# snake curve
 def snake_curve(m,n):
     H = np.arange(m*n).reshape((m,n))
     for i in range(m):
